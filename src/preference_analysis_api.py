@@ -239,7 +239,7 @@ class PreferenceAnalysisAPI:
                 dl.end_latitude,
                 dl.end_longitude,
                 dl.memo
-            FROM drivelog dl
+            FROM drive_log dl
             JOIN car c ON dl.car_id = c.car_id
             WHERE dl.start_time IS NOT NULL
             """

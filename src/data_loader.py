@@ -38,6 +38,14 @@ if __name__ == "__main__":
     # 이 파일을 직접 실행할 경우 아래 코드가 동작 (테스트용)
     print("============================== 데이터베이스 연결 테스트 ==============================")
 
+    # Check available tables
+    tables_query = "SHOW TABLES;"
+    tables_df = get_data_from_db(tables_query)
+    if tables_df is not None:
+        print("Available tables:")
+        print(tables_df)
+        print()
+
     test_query = "SELECT * FROM car LIMIT 10;"
 
     sample_df = get_data_from_db(test_query)

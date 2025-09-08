@@ -17,7 +17,7 @@ import io
 import logging
 from datetime import timedelta
 
-plt.rcParams['font.family'] = ['DejaVu Sans', 'Malgun Gothic', 'AppleGothic']
+plt.rcParams['font.family'] = ['Malgun Gothic', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
 logger = logging.getLogger(__name__)
@@ -67,12 +67,18 @@ class DailyForecastAnalyzer:
                 logger.error(f"차트 생성 오류(weekday_pattern): {e}")
                 charts['weekday_pattern'] = ""
 
+            # JSON 직렬화를 위한 날짜 변환
+            daily_stats_json = daily_stats.copy()
+            daily_stats_json['date'] = daily_stats_json['date'].astype(str)
+            forecast_json = forecast_df.copy()
+            forecast_json['date'] = forecast_json['date'].astype(str)
+
             return {
                 "success": True,
                 "message": "일별 운행량 예측이 완료되었습니다.",
                 "visualizations": charts,
-                "historical_data": daily_stats.to_dict(orient='records'),
-                "predictions": forecast_df.to_dict(orient='records'),
+                "historical_data": daily_stats_json.to_dict(orient='records'),
+                "predictions": forecast_json.to_dict(orient='records'),
                 "weekday_patterns": weekday_pattern,
                 "model_accuracy": model_metrics
             }
@@ -97,7 +103,7 @@ class DailyForecastAnalyzer:
             dl.car_id,
             dl.drive_log_id,
             dl.drive_dist
-        FROM drivelog dl
+        FROM drive_log dl
         WHERE {where_sql}
         """
 
@@ -168,11 +174,11 @@ class DailyForecastAnalyzer:
 
     def _fig_to_base64(self, fig) -> str:
         buffer = io.BytesIO()
-        fig.savefig(buffer, format='png', dpi=100, bbox_inches='tight')
+        fig.savefig(buffer, format='jpeg', dpi=75, bbox_inches='tight')
         buffer.seek(0)
         image_base64 = base64.b64encode(buffer.read()).decode('utf-8')
         plt.close(fig)
-        return image_base64
+        return f"data:image/jpeg;base64,{image_base64}"
 
 
 def create_daily_forecast_api():

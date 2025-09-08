@@ -4,6 +4,8 @@
 
 import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend to prevent GUI threading issues
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.cluster import KMeans, DBSCAN
@@ -12,7 +14,7 @@ import base64
 import io
 import logging
 
-plt.rcParams['font.family'] = ['DejaVu Sans', 'Malgun Gothic', 'AppleGothic']
+plt.rcParams['font.family'] = ['Malgun Gothic', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
 logger = logging.getLogger(__name__)
@@ -38,6 +40,15 @@ class RegionClusteringAnalyzer:
                 return {"success": False, "message": "클러스터링할 위치 데이터가 없습니다.", "visualizations": {}}
 
             coords = df[['lat', 'lon']].dropna()
+            # Additional validation for numeric coordinates
+            coords = coords[(coords['lat'] != 0) & (coords['lon'] != 0)]  # Remove 0,0 coordinates
+            # Convert to numeric and check finite values safely
+            coords = coords[pd.to_numeric(coords['lat'], errors='coerce').notna()]
+            coords = coords[pd.to_numeric(coords['lon'], errors='coerce').notna()]
+            coords['lat'] = pd.to_numeric(coords['lat'], errors='coerce')
+            coords['lon'] = pd.to_numeric(coords['lon'], errors='coerce')
+            coords = coords[np.isfinite(coords['lat'].astype(float)) & np.isfinite(coords['lon'].astype(float))]
+            
             if method.lower() == 'kmeans' and len(coords) < k:
                 return {"success": False, "message": f"데이터 수({len(coords)})가 k({k})보다 적습니다.", "visualizations": {}}
 
@@ -109,7 +120,7 @@ class RegionClusteringAnalyzer:
                 dl.start_latitude, dl.start_longitude,
                 dl.start_point, dl.end_point,
                 dl.drive_dist, dl.car_id
-            FROM drivelog dl
+            FROM drive_log dl
             WHERE {where_sql} AND dl.end_latitude IS NOT NULL AND dl.end_longitude IS NOT NULL
             """
         else:
@@ -119,13 +130,19 @@ class RegionClusteringAnalyzer:
                 dl.start_latitude, dl.start_longitude,
                 dl.start_point, dl.end_point,
                 dl.drive_dist, dl.car_id
-            FROM drivelog dl
+            FROM drive_log dl
             WHERE {where_sql} AND dl.start_latitude IS NOT NULL AND dl.start_longitude IS NOT NULL
             """
 
         df = get_data_from_db(query)
         if df is None or df.empty:
             return pd.DataFrame()
+            
+        # Ensure coordinate columns are numeric
+        for col in ['lat', 'lon']:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+        
         return df
 
     def _compute_dbscan_centers(self, df_clustered: pd.DataFrame) -> pd.DataFrame:
@@ -170,13 +187,36 @@ class RegionClusteringAnalyzer:
         SELECT last_latitude AS lat, last_longitude AS lon
         FROM car
         WHERE last_latitude IS NOT NULL AND last_longitude IS NOT NULL
+          AND last_latitude != 0 AND last_longitude != 0
         """
         df = get_data_from_db(query)
         if df is None or df.empty:
             return []
+        
+        # Additional validation for numeric coordinates
+        df = df.dropna()
+        # Convert to numeric and safely check for finite values
+        df['lat'] = pd.to_numeric(df['lat'], errors='coerce')
+        df['lon'] = pd.to_numeric(df['lon'], errors='coerce')
+        df = df.dropna()  # Remove rows where conversion failed
+        df = df[np.isfinite(df['lat'].astype(float)) & np.isfinite(df['lon'].astype(float))]
+        
+        # Convert to float to ensure proper type
+        try:
+            df['lat'] = df['lat'].astype(float)
+            df['lon'] = df['lon'].astype(float)
+        except (ValueError, TypeError):
+            return []
+            
         return list(df[['lat','lon']].itertuples(index=False, name=None))
 
     def _haversine_km(self, lat1, lon1, lat2, lon2) -> float:
+        # Convert to float and handle None/invalid values
+        try:
+            lat1, lon1, lat2, lon2 = float(lat1), float(lon1), float(lat2), float(lon2)
+        except (ValueError, TypeError):
+            return float('inf')  # Return large distance for invalid coordinates
+            
         R = 6371.0
         p1 = np.radians([lat1, lon1])
         p2 = np.radians([lat2, lon2])
@@ -249,11 +289,11 @@ class RegionClusteringAnalyzer:
 
     def _fig_to_base64(self, fig) -> str:
         buffer = io.BytesIO()
-        fig.savefig(buffer, format='png', dpi=100, bbox_inches='tight')
+        fig.savefig(buffer, format='jpeg', dpi=75, bbox_inches='tight')
         buffer.seek(0)
         image_base64 = base64.b64encode(buffer.read()).decode('utf-8')
         plt.close(fig)
-        return image_base64
+        return f"data:image/jpeg;base64,{image_base64}"
 
 
 def create_region_clustering_api():

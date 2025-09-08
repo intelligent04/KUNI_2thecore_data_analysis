@@ -11,13 +11,19 @@ from typing import Dict, List, Any, Optional
 import base64
 import io
 import logging
+import matplotlib
 
 def _get_mpl():
+    # 헤드리스 서버 안전
+    if matplotlib.get_backend().lower() != 'agg':
+        matplotlib.use('Agg', force=True)
+
     import matplotlib.pyplot as plt
     import seaborn as sns
     plt.rcParams['font.family'] = ['DejaVu Sans', 'Malgun Gothic', 'AppleGothic']
     plt.rcParams['axes.unicode_minus'] = False
     return plt, sns
+
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +94,7 @@ class SimplePreferenceAnalyzer:
         
         query = """
         SELECT dl.start_time, dl.brand, dl.model, c.car_type
-        FROM drivelog dl
+        FROM drive_log dl
         JOIN car c ON dl.car_id = c.car_id
         WHERE dl.start_time IS NOT NULL
         """
@@ -241,74 +247,86 @@ class SimplePreferenceAnalyzer:
         return self._fig_to_base64(fig)
     
     def _create_statistical_chart(self, df: pd.DataFrame, period_type: str) -> str:
-        """통계적 유의성 차트"""
         period_col = 'season' if period_type == 'season' else 'month'
         crosstab = pd.crosstab(df['brand'], df[period_col])
-        
-        # 카이제곱 검정
+
+        if crosstab.shape[0] < 2 or crosstab.shape[1] < 2:
+            # 검정 불가 시 친절히 안내
+            plt, _ = _get_mpl()
+            fig, ax = plt.subplots(figsize=(6, 3))
+            ax.text(0.5, 0.5, '통계 검정을 수행하기에 범주 수가 부족합니다.', ha='center', va='center')
+            ax.axis('off')
+            return self._fig_to_base64(fig)
+
+        from scipy.stats import chi2_contingency
         chi2, p_value, dof, expected = chi2_contingency(crosstab)
-        
+
         plt, sns = _get_mpl()
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-        
-        # 관측값
+
         sns.heatmap(crosstab, annot=True, fmt='d', cmap='Blues', ax=ax1)
         ax1.set_title(f'관측값 (χ² = {chi2:.2f})')
-        
-        # 기댓값
-        sns.heatmap(expected, annot=True, fmt='.1f', cmap='Reds', ax=ax2)
+
+        expected_df = pd.DataFrame(expected, index=crosstab.index, columns=crosstab.columns)
+        sns.heatmap(expected_df, annot=True, fmt='.1f', cmap='Reds', ax=ax2)
         ax2.set_title(f'기댓값 (p = {p_value:.4f})')
-        
-        # 유의성 표시
+
         significance = "통계적으로 유의함" if p_value < 0.05 else "통계적으로 유의하지 않음"
         fig.suptitle(f'브랜드-기간 연관성 분석: {significance}')
-        
+
         plt.tight_layout()
         return self._fig_to_base64(fig)
+
     
     def _fig_to_base64(self, fig) -> str:
-        """Figure를 base64로 변환"""
         import matplotlib.pyplot as plt
         buffer = io.BytesIO()
-        fig.savefig(buffer, format='png', dpi=100, bbox_inches='tight')
+        fig.savefig(buffer, format='jpeg', dpi=75, bbox_inches='tight')
         buffer.seek(0)
         image_base64 = base64.b64encode(buffer.read()).decode('utf-8')
         plt.close(fig)
-        return image_base64
+        # 프론트에서 즉시 사용 가능
+        return f"data:image/jpeg;base64,{image_base64}"
+
 
 
 # Flask API 엔드포인트
 def create_simple_preference_api():
-    """간소화된 API 생성"""
     from flask import request, jsonify
-    
+
     analyzer = SimplePreferenceAnalyzer()
-    
+
     def preference_by_period():
-        """API 엔드포인트"""
         try:
-            year = request.args.get('year', None)
+            year = request.args.get('year')
             period_type = request.args.get('period_type', 'month')
-            
-            # 파라미터 검증
-            if period_type not in ['month', 'season']:
+
+            if period_type not in ('month', 'season'):
                 return jsonify({
                     "success": False,
-                    "message": "period_type은 'month' 또는 'season' 중 하나여야 합니다.",
+                    "message": "period_type은 'month' 또는 'season' 이어야 합니다.",
                     "visualizations": {}
                 }), 400
-            
-            # 분석 실행
+
+            if year is not None and not str(year).isdigit():
+                return jsonify({
+                    "success": False,
+                    "message": "year는 숫자만 가능합니다.",
+                    "visualizations": {}
+                }), 400
+
             result = analyzer.analyze_preferences(year, period_type)
-            
-            return jsonify(result), 200 if result['success'] else 400
-            
+
+            # 데이터 없음은 200으로 처리(클라이언트가 메시지로 판단)
+            status = 200 if result.get('success', False) else 200
+            return jsonify(result), status
+
         except Exception as e:
-            logger.error(f"API 오류: {str(e)}")
+            logger.exception(f"API 오류: {e}")
             return jsonify({
                 "success": False,
                 "message": "서버 내부 오류가 발생했습니다.",
                 "visualizations": {}
             }), 500
-    
+
     return preference_by_period

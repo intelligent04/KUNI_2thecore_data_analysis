@@ -1,0 +1,6 @@
+# 프로덕션 환경 추가 패키지
+gunicorn==21.2.0
+supervisor==4.2.5
+
+# 기존 requirements.txt 포함
+-r requirements.txt

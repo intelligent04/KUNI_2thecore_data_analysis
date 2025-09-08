@@ -10,7 +10,7 @@ import numpy as np
 def _get_mpl():
     import matplotlib.pyplot as plt
     import seaborn as sns
-    plt.rcParams['font.family'] = ['DejaVu Sans', 'Malgun Gothic', 'AppleGothic']
+    plt.rcParams['font.family'] = ['Malgun Gothic', 'DejaVu Sans']
     plt.rcParams['axes.unicode_minus'] = False
     return plt, sns
 from sklearn.linear_model import LinearRegression
@@ -78,7 +78,7 @@ class SimpleTrendAnalyzer:
             dl.model,
             c.car_year,
             COUNT(*) as drive_count
-        FROM drivelog dl
+        FROM drive_log dl
         JOIN car c ON dl.car_id = c.car_id
         WHERE YEAR(dl.start_time) BETWEEN {start_year} AND {end_year}
         GROUP BY YEAR(dl.start_time), dl.brand, dl.model, c.car_year
@@ -479,11 +479,11 @@ class SimpleTrendAnalyzer:
         """Figure를 base64로 변환"""
         import matplotlib.pyplot as plt
         buffer = io.BytesIO()
-        fig.savefig(buffer, format='png', dpi=100, bbox_inches='tight')
+        fig.savefig(buffer, format='jpeg', dpi=75, bbox_inches='tight')
         buffer.seek(0)
         image_base64 = base64.b64encode(buffer.read()).decode('utf-8')
         plt.close(fig)
-        return image_base64
+        return f"data:image/jpeg;base64,{image_base64}"
 
 
 # Flask API 엔드포인트

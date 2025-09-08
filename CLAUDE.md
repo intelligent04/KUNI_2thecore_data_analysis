@@ -67,32 +67,53 @@ Database connection and data loading functionality is centralized in `src/data_l
 - `memo`: Trip notes/events (급감속, 과열 경고, etc.)
 - `status`: Trip status
 
-## Project Structure
+## Project Architecture
 
-- `src/data_loader.py` - Core database connection and data loading utilities
+### Core Infrastructure
+- `app.py` - Main Flask application with REST API endpoints and Swagger documentation
+- `run_server.py` - Production server runner script 
+- `src/data_loader.py` - Database connection and data loading utilities
   - `get_db_connection()` - Creates SQLAlchemy engine from .env credentials
   - `get_data_from_db(query)` - Executes SQL queries and returns pandas DataFrames
 - `verify_setup.py` - Environment verification script for testing library imports
-- `requirements.txt` - Comprehensive dependency list including pandas, numpy, scikit-learn, matplotlib, seaborn, SQLAlchemy, mysql-connector-python, and Jupyter
+
+### Analysis Modules
+- `src/simple_preference_analysis.py` - Seasonal brand/vehicle preference analysis with sklearn
+- `src/simple_trend_analysis.py` - Year-over-year trend analysis 
+- `src/services/daily_forecast.py` - Daily usage forecasting with polynomial regression
+- `src/services/region_clustering.py` - Geographic clustering analysis
+- `src/utils/cache.py` - Result caching utilities for performance optimization
+
+### Supporting Files
+- `src/data_quality.py` - Data validation and quality checks
+- `src/visualization_enhanced.py` - Advanced visualization utilities
+- `src/statistical_tests.py` - Statistical analysis tools
+- `requirements.txt` - Full data science stack dependencies
 
 ## Development Workflow
 
-Since this is a data analysis project with Flask web server capabilities, use these commands:
+Common development commands for this data analysis project:
 
 ```bash
+# Verify environment setup (import test)
+python verify_setup.py
+
 # Test database connection and data loading
 python src/data_loader.py
 
-# Verify environment setup
-python verify_setup.py
-
-# Start Flask web server
+# Start Flask web server (development)
 python app.py
-# or
+# or (preferred production runner)
 python run_server.py
 
-# Start Jupyter for analysis
+# Start Jupyter for interactive analysis
 jupyter lab
+
+# Test individual analysis modules
+python -m src.simple_preference_analysis
+python -m src.simple_trend_analysis
+python -m src.services.daily_forecast
+python -m src.services.region_clustering
 ```
 
 ## Flask Web Server
@@ -103,17 +124,20 @@ The project includes a Flask-based REST API server for data analysis:
 - **Server Runner**: `run_server.py` - Development server startup script
 - **Base URL**: `http://localhost:5000`
 
-### Core Analysis API Endpoints
+### Available API Endpoints
 
+**Core System Endpoints:**
 - `GET /` - API information and available endpoints  
 - `POST /api/data` - Execute SQL queries and return results as JSON
 - `GET /api/health` - Health check and database connectivity status
 
-#### Planned Data Analysis Endpoints
-- `GET /api/analysis/seasonal-preferences` - Monthly/seasonal brand and vehicle preference analysis
-- `GET /api/analysis/trend-analysis` - Year-over-year brand/vehicle preference trends
-- `GET /api/analysis/daily-usage-forecast` - Daily vehicle usage counts with forecasting
-- `GET /api/analysis/location-clustering` - Regional importance analysis for location optimization
+**Data Analysis Endpoints:**
+- `GET /api/analysis/period` - Monthly/seasonal brand and vehicle preference analysis (implemented in `src/simple_preference_analysis.py`)
+- `GET /api/analysis/trend` - Year-over-year brand/vehicle preference trends (implemented in `src/simple_trend_analysis.py`)
+- `GET /api/forecast/daily` - Daily vehicle usage counts with forecasting (implemented in `src/services/daily_forecast.py`)
+- `GET /api/clustering/regions` - Regional importance analysis for location optimization (implemented in `src/services/region_clustering.py`)
+
+**Note:** All analysis endpoints use Swagger documentation via flasgger. Access interactive API docs at `/apidocs/` when server is running.
 
 ### API Usage Example
 
@@ -121,10 +145,22 @@ The project includes a Flask-based REST API server for data analysis:
 # Health check
 curl http://localhost:5000/api/health
 
-# Execute a query
+# Execute a custom SQL query
 curl -X POST http://localhost:5000/api/data \
   -H "Content-Type: application/json" \
   -d '{"query": "SELECT * FROM car LIMIT 5;"}'
+
+# Get seasonal preference analysis
+curl http://localhost:5000/api/analysis/period
+
+# Get trend analysis 
+curl http://localhost:5000/api/analysis/trend
+
+# Get daily usage forecast
+curl http://localhost:5000/api/forecast/daily
+
+# Access Swagger documentation
+# Open browser to: http://localhost:5000/apidocs/
 ```
 
 ## Data Analysis Services
@@ -185,10 +221,18 @@ curl -X POST http://localhost:5000/api/data \
 
 The project includes a full data science stack:
 - **Database**: SQLAlchemy, mysql-connector-python, python-dotenv
-- **Data Analysis**: pandas, numpy, scipy
-- **Machine Learning**: scikit-learn (clustering, regression)
-- **Visualization**: matplotlib, seaborn, plotly (for interactive graphs)
-- **Geospatial**: geopy (for location analysis)
-- **Web Server**: Flask, Flask-CORS, Flask-RESTful, Werkzeug
-- **Jupyter**: jupyterlab, ipykernel
+- **Data Analysis**: pandas, numpy, scipy, statsmodels
+- **Machine Learning**: scikit-learn (clustering, regression, preprocessing)
+- **Visualization**: matplotlib, seaborn (base64 encoding for API responses)
+- **Web Server**: Flask, Flask-CORS, Flask-RESTful, flasgger (Swagger), Werkzeug
+- **Jupyter**: jupyterlab, ipykernel for interactive development
 - **Development**: All supporting libraries for data analysis workflows
+
+## Key Implementation Notes
+
+- **Korean Font Support**: matplotlib configured with Korean fonts (Malgun Gothic for Windows)
+- **Result Caching**: Analysis endpoints use `@cache_result` decorator for performance
+- **Base64 Visualizations**: Charts returned as base64 strings for API consumption
+- **Error Handling**: Comprehensive error handling with structured JSON responses
+- **Swagger Documentation**: All endpoints documented and accessible at `/apidocs/`
+- **Database Requirements**: Requires `.env` file with MySQL connection parameters

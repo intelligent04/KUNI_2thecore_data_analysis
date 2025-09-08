@@ -20,7 +20,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # 한글 폰트 설정
-plt.rcParams['font.family'] = ['DejaVu Sans', 'Malgun Gothic', 'AppleGothic']
+plt.rcParams['font.family'] = ['Malgun Gothic', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
 logger = logging.getLogger(__name__)
