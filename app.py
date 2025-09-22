@@ -132,54 +132,108 @@ class HealthCheckAPI(Resource):
             }, 503
 
 
+# Base API 클래스 - 공통 패턴 추상화
+class BaseAnalysisAPI(Resource):
+    """분석 API들의 공통 패턴을 처리하는 베이스 클래스"""
+
+    def execute_analysis(self, analyzer_class, analyzer_module, method_name='analyze', **kwargs):
+        """공통 분석 실행 패턴"""
+        try:
+            # 동적 임포트
+            module = __import__(analyzer_module, fromlist=[analyzer_class])
+            analyzer_cls = getattr(module, analyzer_class)
+
+            # 분석기 인스턴스 생성 및 실행
+            analyzer = analyzer_cls()
+            method = getattr(analyzer, method_name)
+            result = method(**kwargs)
+
+            return result
+        except Exception as e:
+            app.logger.error(f'Analysis error: {str(e)}')
+            return {"success": False, "error": f"분석 중 오류가 발생했습니다: {str(e)}"}, 500
+
+    def get_param(self, param_name, default=None, param_type=str):
+        """파라미터 추출 및 타입 변환 헬퍼"""
+        try:
+            value = request.args.get(param_name, default)
+            if value is None:
+                return default
+            if param_type == bool:
+                return value.lower() == 'true'
+            return param_type(value)
+        except (ValueError, TypeError):
+            return default
+
+
 # 간소화된 선호도 분석 API 클래스
-class PreferenceAnalysisAPI(Resource):
+class PreferenceAnalysisAPI(BaseAnalysisAPI):
     @swag_from({'responses': {200: {'description': '선호도 분석 결과 반환'}}})
     def get(self):
-        from src.simple_preference_analysis import SimplePreferenceAnalyzer
-        analyzer = SimplePreferenceAnalyzer()
-        year = request.args.get('year')
-        period_type = request.args.get('period_type', 'month')
-        result = analyzer.analyze_preferences(year, period_type)
-        return result
+        year = self.get_param('year')
+        period_type = self.get_param('period_type', 'month')
+
+        return self.execute_analysis(
+            'SimplePreferenceAnalyzer',
+            'src.simple_preference_analysis',
+            'analyze_preferences',
+            year=year,
+            period_type=period_type
+        )
 
 
-# 간소화된 트렌드 분석 API 클래스  
-class TrendAnalysisAPI(Resource):
+# 간소화된 트렌드 분석 API 클래스
+class TrendAnalysisAPI(BaseAnalysisAPI):
     @swag_from({'responses': {200: {'description': '연도별 트렌드 분석 결과 반환'}}})
     def get(self):
-        from src.simple_trend_analysis import SimpleTrendAnalyzer
-        analyzer = SimpleTrendAnalyzer()
-        start_year = int(request.args.get('start_year', 2020))
-        end_year = int(request.args.get('end_year', 2025))
-        top_n = int(request.args.get('top_n', 5))
-        result = analyzer.analyze_yearly_trend(start_year, end_year, top_n)
-        return result
+        start_year = self.get_param('start_year', 2020, int)
+        end_year = self.get_param('end_year', 2025, int)
+        top_n = self.get_param('top_n', 5, int)
+
+        return self.execute_analysis(
+            'SimpleTrendAnalyzer',
+            'src.simple_trend_analysis',
+            'analyze_yearly_trend',
+            start_year=start_year,
+            end_year=end_year,
+            top_n=top_n
+        )
 
 
-class DailyForecastAPI(Resource):
+class DailyForecastAPI(BaseAnalysisAPI):
     @swag_from({'responses': {200: {'description': '일일 예측 결과 반환'}}})
     def get(self):
-        from src.services.daily_forecast import DailyForecastAnalyzer
-        analyzer = DailyForecastAnalyzer()
-        start_date = request.args.get('start_date')
-        end_date = request.args.get('end_date')
-        forecast_days = int(request.args.get('forecast_days', 7))
-        result = analyzer.analyze(start_date, end_date, forecast_days)
-        return result
+        start_date = self.get_param('start_date')
+        end_date = self.get_param('end_date')
+        forecast_days = self.get_param('forecast_days', 7, int)
+
+        return self.execute_analysis(
+            'DailyForecastAnalyzer',
+            'src.services.daily_forecast',
+            'analyze',
+            start_date=start_date,
+            end_date=end_date,
+            forecast_days=forecast_days
+        )
 
 
-class RegionClusteringAPI(Resource):
+class RegionClusteringAPI(BaseAnalysisAPI):
     @swag_from({'responses': {200: {'description': '지역 군집화 결과 반환'}}})
     def get(self):
-        from src.services.region_clustering import RegionClusteringAnalyzer
-        analyzer = RegionClusteringAnalyzer()
-        start_date = request.args.get('start_date')
-        end_date = request.args.get('end_date')
-        k = int(request.args.get('k', 5))
-        use_end_points = request.args.get('use_end_points', 'true').lower() == 'true'
-        result = analyzer.analyze(start_date, end_date, k, use_end_points)
-        return result
+        start_date = self.get_param('start_date')
+        end_date = self.get_param('end_date')
+        k = self.get_param('k', 5, int)
+        use_end_points = self.get_param('use_end_points', 'true', bool)
+
+        return self.execute_analysis(
+            'RegionClusteringAnalyzer',
+            'src.services.region_clustering',
+            'analyze',
+            start_date=start_date,
+            end_date=end_date,
+            k=k,
+            use_end_points=use_end_points
+        )
 
 
 # 엔드포인트 등록

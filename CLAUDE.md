@@ -14,7 +14,7 @@ The system provides data-driven insights to rental car companies using two main 
 ### Core Services Provided
 1. **Seasonal Brand/Vehicle Preference Analysis** - Monthly and seasonal analysis of preferred brands and vehicles with seasonality evaluation
 2. **Trend Analysis** - Year-over-year changes in brand and vehicle preferences 
-3. **Daily Vehicle Usage Forecasting** - Daily operational vehicle count analysis with linear regression forecasting (1 week to 1 month ahead)
+3. **Daily Vehicle Usage Forecasting** - Daily operational vehicle count analysis with SARIMA time series forecasting (1 week to 1 month ahead)
 4. **Location Clustering Analysis** - Regional importance quantification for optimal rental location placement
 
 ## Environment Setup
@@ -80,7 +80,7 @@ Database connection and data loading functionality is centralized in `src/data_l
 ### Analysis Modules
 - `src/simple_preference_analysis.py` - Seasonal brand/vehicle preference analysis with sklearn
 - `src/simple_trend_analysis.py` - Year-over-year trend analysis 
-- `src/services/daily_forecast.py` - Daily usage forecasting with polynomial regression
+- `src/services/daily_forecast.py` - Daily usage forecasting with SARIMA time series models
 - `src/services/region_clustering.py` - Geographic clustering analysis
 - `src/utils/cache.py` - Result caching utilities for performance optimization
 
@@ -88,7 +88,9 @@ Database connection and data loading functionality is centralized in `src/data_l
 - `src/data_quality.py` - Data validation and quality checks
 - `src/visualization_enhanced.py` - Advanced visualization utilities
 - `src/statistical_tests.py` - Statistical analysis tools
+- `src/utils/font_config.py` - Cross-platform Korean font configuration for matplotlib
 - `requirements.txt` - Full data science stack dependencies
+- `ubuntu_setup.sh` - Ubuntu server deployment setup script
 
 ## Development Workflow
 
@@ -195,7 +197,7 @@ curl http://localhost:5000/api/forecast/daily
 **Purpose**: Provide operational insights and future demand prediction
 - Analyze daily operational vehicle counts over specified periods
 - Generate visual graphs of usage patterns
-- Implement linear regression forecasting for 1-week to 1-month ahead
+- Implement SARIMA time series forecasting for 1-week to 1-month ahead
 - Create interactive dashboards with forecast visualizations
 
 **Key Features**:
@@ -230,9 +232,75 @@ The project includes a full data science stack:
 
 ## Key Implementation Notes
 
-- **Korean Font Support**: matplotlib configured with Korean fonts (Malgun Gothic for Windows)
+- **Cross-Platform Korean Font Support**: matplotlib configured with Korean fonts (Malgun Gothic for Windows, Noto Sans CJK KR for Linux, Apple SD Gothic Neo for macOS)
 - **Result Caching**: Analysis endpoints use `@cache_result` decorator for performance
 - **Base64 Visualizations**: Charts returned as base64 strings for API consumption
 - **Error Handling**: Comprehensive error handling with structured JSON responses
 - **Swagger Documentation**: All endpoints documented and accessible at `/apidocs/`
 - **Database Requirements**: Requires `.env` file with MySQL connection parameters
+
+## Ubuntu Server Deployment
+
+For Ubuntu server deployment, use the provided setup script:
+
+```bash
+# Make setup script executable
+chmod +x ubuntu_setup.sh
+
+# Run Ubuntu setup script
+./ubuntu_setup.sh
+```
+
+### Ubuntu Prerequisites
+
+The setup script will install:
+- **Korean Fonts**: fonts-noto-cjk, fonts-nanum, fonts-liberation
+- **System Packages**: python3, python3-pip, python3-venv, build-essential
+- **MySQL Client**: libmysqlclient-dev for database connectivity
+
+### Manual Ubuntu Setup (Alternative)
+
+```bash
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install Python and dependencies
+sudo apt install -y python3 python3-pip python3-venv python3-dev
+sudo apt install -y build-essential libmysqlclient-dev pkg-config
+
+# Install Korean fonts (Critical for chart generation)
+sudo apt install -y fonts-noto-cjk fonts-nanum fonts-liberation
+sudo fc-cache -fv
+
+# Verify Korean fonts are installed
+fc-list :lang=ko
+
+# Create virtual environment and install dependencies
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Create .env file with database credentials
+# DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT
+
+# Run server
+python run_server.py
+```
+
+### Production Deployment
+
+For production servers, use gunicorn:
+
+```bash
+# Install gunicorn
+pip install gunicorn
+
+# Run production server
+gunicorn -w 4 -b 0.0.0.0:5000 app:app
+
+# Or with supervisor for process management
+sudo apt install supervisor
+# Configure supervisor with provided config
+```
+
+**Important**: Korean font installation is critical for proper chart generation. Without Korean fonts, chart text will appear as squares or question marks.
