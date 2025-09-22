@@ -20,7 +20,7 @@ def _get_mpl():
 
     import matplotlib.pyplot as plt
     import seaborn as sns
-    plt.rcParams['font.family'] = ['DejaVu Sans', 'Malgun Gothic', 'AppleGothic']
+    plt.rcParams['font.family'] = ['NanumGothic', 'DejaVu Sans', 'AppleGothic']
     plt.rcParams['axes.unicode_minus'] = False
     return plt, sns
 

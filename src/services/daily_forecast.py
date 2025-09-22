@@ -17,7 +17,7 @@ import io
 import logging
 from datetime import timedelta
 
-plt.rcParams['font.family'] = ['Malgun Gothic', 'DejaVu Sans']
+plt.rcParams['font.family'] = ['NanumGothic', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
 logger = logging.getLogger(__name__)

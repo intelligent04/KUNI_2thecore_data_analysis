@@ -10,7 +10,7 @@ import numpy as np
 def _get_mpl():
     import matplotlib.pyplot as plt
     import seaborn as sns
-    plt.rcParams['font.family'] = ['Malgun Gothic', 'DejaVu Sans']
+    plt.rcParams['font.family'] = ['NanumGothic', 'DejaVu Sans']
     plt.rcParams['axes.unicode_minus'] = False
     return plt, sns
 from sklearn.linear_model import LinearRegression
