@@ -18,11 +18,9 @@ def _get_mpl():
     if matplotlib.get_backend().lower() != 'agg':
         matplotlib.use('Agg', force=True)
 
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    plt.rcParams['font.family'] = ['DejaVu Sans', 'Malgun Gothic', 'AppleGothic']
-    plt.rcParams['axes.unicode_minus'] = False
-    return plt, sns
+    # 폰트 설정 적용
+    from .utils.font_config import get_matplotlib
+    return get_matplotlib()
 
 
 logger = logging.getLogger(__name__)

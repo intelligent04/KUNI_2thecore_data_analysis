@@ -14,7 +14,7 @@ The system provides data-driven insights to rental car companies using two main 
 ### Core Services Provided
 1. **Seasonal Brand/Vehicle Preference Analysis** - Monthly and seasonal analysis of preferred brands and vehicles with seasonality evaluation
 2. **Trend Analysis** - Year-over-year changes in brand and vehicle preferences 
-3. **Daily Vehicle Usage Forecasting** - Daily operational vehicle count analysis with linear regression forecasting (1 week to 1 month ahead)
+3. **Daily Vehicle Usage Forecasting** - Daily operational vehicle count analysis with SARIMA time series forecasting (1 week to 1 month ahead)
 4. **Location Clustering Analysis** - Regional importance quantification for optimal rental location placement
 
 ## Environment Setup
@@ -80,7 +80,7 @@ Database connection and data loading functionality is centralized in `src/data_l
 ### Analysis Modules
 - `src/simple_preference_analysis.py` - Seasonal brand/vehicle preference analysis with sklearn
 - `src/simple_trend_analysis.py` - Year-over-year trend analysis 
-- `src/services/daily_forecast.py` - Daily usage forecasting with polynomial regression
+- `src/services/daily_forecast.py` - Daily usage forecasting with SARIMA time series models
 - `src/services/region_clustering.py` - Geographic clustering analysis
 - `src/utils/cache.py` - Result caching utilities for performance optimization
 
@@ -88,7 +88,9 @@ Database connection and data loading functionality is centralized in `src/data_l
 - `src/data_quality.py` - Data validation and quality checks
 - `src/visualization_enhanced.py` - Advanced visualization utilities
 - `src/statistical_tests.py` - Statistical analysis tools
+- `src/utils/font_config.py` - Cross-platform Korean font configuration for matplotlib
 - `requirements.txt` - Full data science stack dependencies
+- `ubuntu_setup.sh` - Ubuntu server deployment setup script
 
 ## Development Workflow
 
@@ -195,7 +197,7 @@ curl http://localhost:5000/api/forecast/daily
 **Purpose**: Provide operational insights and future demand prediction
 - Analyze daily operational vehicle counts over specified periods
 - Generate visual graphs of usage patterns
-- Implement linear regression forecasting for 1-week to 1-month ahead
+- Implement SARIMA time series forecasting for 1-week to 1-month ahead
 - Create interactive dashboards with forecast visualizations
 
 **Key Features**:
