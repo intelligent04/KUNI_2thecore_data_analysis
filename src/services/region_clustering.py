@@ -14,8 +14,9 @@ import base64
 import io
 import logging
 
-plt.rcParams['font.family'] = ['NanumGothic', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
+# 폰트 설정은 utils.font_config에서 처리
+from ..utils.font_config import setup_korean_font
+setup_korean_font()
 
 logger = logging.getLogger(__name__)
 from ..utils.cache import cache_result

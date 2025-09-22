@@ -8,11 +8,9 @@ import numpy as np
 # matplotlib/seaborn은 지연 로딩 (_get_mpl) 사용
 
 def _get_mpl():
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    plt.rcParams['font.family'] = ['NanumGothic', 'DejaVu Sans']
-    plt.rcParams['axes.unicode_minus'] = False
-    return plt, sns
+    # 폰트 설정 적용
+    from .utils.font_config import get_matplotlib
+    return get_matplotlib()
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
 from typing import Dict, List, Any, Optional
