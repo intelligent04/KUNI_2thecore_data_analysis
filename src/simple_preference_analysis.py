@@ -172,16 +172,24 @@ class SimplePreferenceAnalyzer:
     def _create_pie_chart(self, df: pd.DataFrame) -> str:
         """브랜드별 시장 점유율 파이차트"""
         brand_counts = df['brand'].value_counts()
-        print(df)
-        
+        total_count = brand_counts.sum()
+
+        # 3% 미만 브랜드들을 '기타'로 합치기
+        threshold = 0.03 * total_count
+        major_brands = brand_counts[brand_counts >= threshold]
+        minor_brands = brand_counts[brand_counts < threshold]
+
+        if len(minor_brands) > 0:
+            major_brands['기타'] = minor_brands.sum()
+
         plt, _ = _get_mpl()
         fig, ax = plt.subplots(figsize=(8, 8))
-        colors = [self._color_for_brand(b) for b in brand_counts.index]
-        
-        ax.pie(brand_counts.values, labels=brand_counts.index, autopct='%1.1f%%', 
+        colors = [self._color_for_brand(b) if b != '기타' else '#CCCCCC' for b in major_brands.index]
+
+        ax.pie(major_brands.values, labels=major_brands.index, autopct='%1.1f%%',
                colors=colors, startangle=90)
         ax.set_title('브랜드별 시장 점유율')
-        
+
         plt.tight_layout()
         return self._fig_to_base64(fig)
     
