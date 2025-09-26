@@ -33,7 +33,7 @@ class SimplePreferenceAnalyzer:
         self.brand_colors = {'현대': '#1f77b4', '기아': '#ff7f0e', '제네시스': '#2ca02c'}
         self.dynamic_colors = {}
         # 기본 팔레트(필요 시 확장)
-        self.color_palette = ['#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2',
+        self.color_palette = ["#323b6e", '#d62728', '#9467bd', '#8c564b', '#e377c2',
                               '#7f7f7f', '#bcbd22', '#17becf', '#1f77b4', '#ff7f0e']
         self.palette_idx = 0
         self.season_names = {1: '봄', 2: '여름', 3: '가을', 4: '겨울'}
@@ -157,8 +157,10 @@ class SimplePreferenceAnalyzer:
         
         plt, sns = _get_mpl()
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.heatmap(crosstab, annot=True, fmt='.2f', cmap='YlOrRd', ax=ax)
-        ax.set_title(f'브랜드별 {period_type} 선호도')
+        sns.heatmap(crosstab, annot=True, fmt='.2f', cmap='YlGn', ax=ax)
+        title = '브랜드별 월별 선호도' if period_type == 'month' else '브랜드별 계절별 선호도'
+        ax.set_title(title)
+        ax.set_ylabel('브랜드')
         
         plt.tight_layout()
         return self._fig_to_base64(fig)
