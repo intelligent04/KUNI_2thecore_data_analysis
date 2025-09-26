@@ -152,7 +152,7 @@ class SimplePreferenceAnalyzer:
     
     def _create_heatmap(self, df: pd.DataFrame, period_type: str) -> str:
         """브랜드별 기간별 히트맵"""
-        period_col = '월' if period_type == 'month' else '계절'
+        period_col = 'month' if period_type == 'month' else 'season'
         crosstab = pd.crosstab(df['brand'], df[period_col], normalize='columns')
         
         plt, sns = _get_mpl()
