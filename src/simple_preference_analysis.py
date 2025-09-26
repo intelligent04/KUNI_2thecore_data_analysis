@@ -175,7 +175,7 @@ class SimplePreferenceAnalyzer:
         total_count = brand_counts.sum()
 
         # 3% 미만 브랜드들을 '기타'로 합치기
-        threshold = 0.10 * total_count
+        threshold = 0.05 * total_count
         major_brands = brand_counts[brand_counts >= threshold]
         minor_brands = brand_counts[brand_counts < threshold]
 
