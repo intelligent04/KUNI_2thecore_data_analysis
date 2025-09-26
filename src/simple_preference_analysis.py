@@ -160,6 +160,10 @@ class SimplePreferenceAnalyzer:
         sns.heatmap(crosstab, annot=True, fmt='.2f', cmap='YlGn', ax=ax)
         title = '브랜드별 월별 선호도' if period_type == 'month' else '브랜드별 계절별 선호도'
         ax.set_title(title)
+        if period_type == 'month':
+            ax.set_xlabel('월')
+        else:
+            ax.set_xlabel('계절')
         ax.set_ylabel('브랜드')
         
         plt.tight_layout()
