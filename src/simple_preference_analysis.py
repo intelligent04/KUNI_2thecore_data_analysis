@@ -152,30 +152,30 @@ class SimplePreferenceAnalyzer:
     
     def _create_heatmap(self, df: pd.DataFrame, period_type: str) -> str:
         """브랜드별 기간별 히트맵"""
-        period_col = 'month' if period_type == 'month' else 'season'
+        period_col = '월' if period_type == 'month' else '계절'
         crosstab = pd.crosstab(df['brand'], df[period_col], normalize='columns')
         
         plt, sns = _get_mpl()
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.heatmap(crosstab, annot=True, fmt='.2f', cmap='YlGn', ax=ax)
+        sns.heatmap(crosstab, annot=True, fmt='.2f', cmap='YlOrRd', ax=ax)
         title = '브랜드별 월별 선호도' if period_type == 'month' else '브랜드별 계절별 선호도'
         ax.set_title(title)
-        ax.set_ylabel('브랜드')
         
         plt.tight_layout()
         return self._fig_to_base64(fig)
     
     def _create_pie_chart(self, df: pd.DataFrame) -> str:
-        """브랜드별 시장 점유율 파이차트"""
+        """브랜드별 선호도 파이차트"""
         brand_counts = df['brand'].value_counts()
+        print(df)
         
         plt, _ = _get_mpl()
         fig, ax = plt.subplots(figsize=(8, 8))
         colors = [self._color_for_brand(b) for b in brand_counts.index]
         
         ax.pie(brand_counts.values, labels=brand_counts.index, autopct='%1.1f%%', 
-               colors=colors, startangle=90)
-        ax.set_title('브랜드별 시장 점유율')
+        colors=colors, startangle=90)
+        ax.set_title('브랜드별 선호도')
         
         plt.tight_layout()
         return self._fig_to_base64(fig)
