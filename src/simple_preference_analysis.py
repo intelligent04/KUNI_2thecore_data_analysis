@@ -161,10 +161,10 @@ class SimplePreferenceAnalyzer:
         title = '브랜드별 월별 선호도' if period_type == 'month' else '브랜드별 계절별 선호도'
         ax.set_title(title, fontsize=16, fontweight='bold')
         if period_type == 'month':
-            ax.set_xlabel('월', fontsize=14, fontweight='bold')
+            ax.set_xlabel('월', fontsize=12, fontweight='medium')
         else:
-            ax.set_xlabel('계절', fontsize=14, fontweight='bold')
-        ax.set_ylabel('브랜드', fontsize=14, fontweight='bold')
+            ax.set_xlabel('계절', fontsize=12, fontweight='medium')
+        ax.set_ylabel('브랜드', fontsize=12, fontweight='medium')
         
         plt.tight_layout()
         return self._fig_to_base64(fig)
