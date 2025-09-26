@@ -154,17 +154,23 @@ class SimplePreferenceAnalyzer:
         """브랜드별 기간별 히트맵"""
         period_col = 'month' if period_type == 'month' else 'season'
         crosstab = pd.crosstab(df['brand'], df[period_col], normalize='columns')
-        
+        crosstab_percent = crosstab * 100  # 백분율로 변환
+
         plt, sns = _get_mpl()
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.heatmap(crosstab, annot=True, fmt='.2f', cmap='YlGn', ax=ax)
+        sns.heatmap(crosstab_percent, annot=True, fmt='.1f', cmap='YlGn', ax=ax,
+                   annot_kws={'size': 10}, cbar_kws={'label': '비율 (%)'})
+
+        # 히트맵 셀에 % 기호 추가
+        for text in ax.texts:
+            text.set_text(text.get_text() + '%')
         title = '브랜드별 월별 선호도' if period_type == 'month' else '브랜드별 계절별 선호도'
-        ax.set_title(title, fontsize=16, fontweight='bold')
+        ax.set_title(title, fontsize=14, fontweight='medium')
         if period_type == 'month':
-            ax.set_xlabel('월', fontsize=12, fontweight='medium')
+            ax.set_xlabel('월', fontsize=12)
         else:
-            ax.set_xlabel('계절', fontsize=12, fontweight='medium')
-        ax.set_ylabel('브랜드', fontsize=12, fontweight='medium')
+            ax.set_xlabel('계절', fontsize=12)
+        ax.set_ylabel('브랜드', fontsize=12)
         
         plt.tight_layout()
         return self._fig_to_base64(fig)
@@ -187,7 +193,7 @@ class SimplePreferenceAnalyzer:
         colors = [self._color_for_brand(b) if b != '기타' else '#CCCCCC' for b in major_brands.index]
         ax.pie(major_brands.values, labels=major_brands.index, autopct='%1.1f%%',
                colors=colors, startangle=90)
-        ax.set_title('브랜드별 시장 점유율')
+        ax.set_title('브랜드별 시장 점유율', fontsize=14, fontweight='medium')
 
         plt.tight_layout()
         return self._fig_to_base64(fig)
@@ -211,7 +217,7 @@ class SimplePreferenceAnalyzer:
                    marker='o', label=brand, linewidth=2,
                    color=self._color_for_brand(brand))
         
-        ax.set_title(f'브랜드별 {period_type} 트렌드')
+        ax.set_title(f'브랜드별 {period_type} 트렌드', fontsize=14, fontweight='medium')
         ax.set_xlabel('기간')
         ax.set_ylabel('운행 건수')
         ax.legend()
@@ -252,7 +258,7 @@ class SimplePreferenceAnalyzer:
             ax.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 0.01,
                    f'{score:.2f}', ha='center', va='bottom')
         
-        ax.set_title('브랜드별 계절성 강도')
+        ax.set_title('브랜드별 계절성 강도', fontsize=14, fontweight='medium')
         ax.set_ylabel('계절성 강도 (변동계수)')
         
         plt.tight_layout()
