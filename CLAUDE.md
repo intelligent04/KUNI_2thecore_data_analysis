@@ -232,9 +232,75 @@ The project includes a full data science stack:
 
 ## Key Implementation Notes
 
-- **Korean Font Support**: matplotlib configured with Korean fonts (Malgun Gothic for Windows)
+- **Cross-Platform Korean Font Support**: matplotlib configured with Korean fonts (Malgun Gothic for Windows, Noto Sans CJK KR for Linux, Apple SD Gothic Neo for macOS)
 - **Result Caching**: Analysis endpoints use `@cache_result` decorator for performance
 - **Base64 Visualizations**: Charts returned as base64 strings for API consumption
 - **Error Handling**: Comprehensive error handling with structured JSON responses
 - **Swagger Documentation**: All endpoints documented and accessible at `/apidocs/`
 - **Database Requirements**: Requires `.env` file with MySQL connection parameters
+
+## Ubuntu Server Deployment
+
+For Ubuntu server deployment, use the provided setup script:
+
+```bash
+# Make setup script executable
+chmod +x ubuntu_setup.sh
+
+# Run Ubuntu setup script
+./ubuntu_setup.sh
+```
+
+### Ubuntu Prerequisites
+
+The setup script will install:
+- **Korean Fonts**: fonts-noto-cjk, fonts-nanum, fonts-liberation
+- **System Packages**: python3, python3-pip, python3-venv, build-essential
+- **MySQL Client**: libmysqlclient-dev for database connectivity
+
+### Manual Ubuntu Setup (Alternative)
+
+```bash
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install Python and dependencies
+sudo apt install -y python3 python3-pip python3-venv python3-dev
+sudo apt install -y build-essential libmysqlclient-dev pkg-config
+
+# Install Korean fonts (Critical for chart generation)
+sudo apt install -y fonts-noto-cjk fonts-nanum fonts-liberation
+sudo fc-cache -fv
+
+# Verify Korean fonts are installed
+fc-list :lang=ko
+
+# Create virtual environment and install dependencies
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Create .env file with database credentials
+# DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT
+
+# Run server
+python run_server.py
+```
+
+### Production Deployment
+
+For production servers, use gunicorn:
+
+```bash
+# Install gunicorn
+pip install gunicorn
+
+# Run production server
+gunicorn -w 4 -b 0.0.0.0:5000 app:app
+
+# Or with supervisor for process management
+sudo apt install supervisor
+# Configure supervisor with provided config
+```
+
+**Important**: Korean font installation is critical for proper chart generation. Without Korean fonts, chart text will appear as squares or question marks.
