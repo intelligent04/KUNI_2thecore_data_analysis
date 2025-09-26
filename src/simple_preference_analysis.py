@@ -172,6 +172,7 @@ class SimplePreferenceAnalyzer:
     def _create_pie_chart(self, df: pd.DataFrame) -> str:
         """브랜드별 시장 점유율 파이차트"""
         brand_counts = df['brand'].value_counts()
+        print(df)
         
         plt, _ = _get_mpl()
         fig, ax = plt.subplots(figsize=(8, 8))
