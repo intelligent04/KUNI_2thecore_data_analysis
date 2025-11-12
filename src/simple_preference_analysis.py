@@ -5,6 +5,7 @@ sklearn을 활용한 간단하고 효율적인 선호도 분석 및 시각화
 
 import pandas as pd
 import numpy as np
+from .data_loader import get_data_from_db
 from sklearn.preprocessing import LabelEncoder
 from scipy.stats import chi2_contingency
 from typing import Dict, List, Any, Optional, cast
@@ -89,7 +90,7 @@ class SimplePreferenceAnalyzer:
     
     def _load_data(self, year: Optional[str]) -> pd.DataFrame:
         """데이터 로드 및 전처리"""
-        from .data_loader import get_data_from_db
+
         
         query = """
         SELECT dl.start_time, dl.brand, dl.model, c.car_type
