@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from scipy.stats import chi2_contingency
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, cast
 from numpy.typing import NDArray
 import base64
 import io
@@ -260,7 +260,11 @@ class SimplePreferenceAnalyzer:
             return self._fig_to_base64(fig)
 
         # Chi-square test (명시적으로 ndarray로 변환해 타입 안정성 확보)
-        chi2, p_value, dof, expected_arr = chi2_contingency(crosstab.to_numpy())
+        chi2_res = chi2_contingency(crosstab.to_numpy())
+        chi2, p_value, dof, expected_arr = cast(
+            tuple[float, float, int, NDArray[np.float64]],
+            chi2_res,
+        )
 
         plt, sns = _get_mpl()
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
@@ -270,7 +274,7 @@ class SimplePreferenceAnalyzer:
 
         # Pylance가 tuple로 추론하는 경우가 있어 명시적 타입으로 생성
         expected_df = pd.DataFrame(
-            expected_arr, index=crosstab.index, columns=crosstab.columns
+            data=expected_arr, index=crosstab.index, columns=crosstab.columns
         )
         sns.heatmap(expected_df, annot=True, fmt='.1f', cmap='Reds', ax=ax2)
         ax2.set_title(f'기댓값 (p = {p_value:.4f})')
