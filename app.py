@@ -4,6 +4,7 @@ from flask_cors import CORS
 from flask_restful import Api, Resource
 import json
 from sqlalchemy import text
+from typing import Union, Optional, Any
 from src.data_loader import get_data_from_db, get_db_connection
 from src.simple_preference_analysis import create_simple_preference_api
 from src.simple_trend_analysis import create_simple_trend_api
@@ -153,7 +154,7 @@ class BaseAnalysisAPI(Resource):
             app.logger.error(f'Analysis error: {str(e)}')
             return {"success": False, "error": f"분석 중 오류가 발생했습니다: {str(e)}"}, 500
 
-    def get_param(self, param_name, default=None, param_type=str):
+    def get_param(self, param_name: str, default: Optional[Any] = None, param_type: type = str) -> Any:
         """파라미터 추출 및 타입 변환 헬퍼"""
         try:
             value = request.args.get(param_name, default)
