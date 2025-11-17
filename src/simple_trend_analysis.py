@@ -230,7 +230,7 @@ class SimpleTrendAnalyzer:
         
         # 각 브랜드별 변동성과 성장률 계산
         for brand in yearly_brand_share.columns:
-            shares = yearly_brand_share[brand].values
+            shares = yearly_brand_share[brand].values.astype(float)
             
             # 변동성 (변동계수)
             volatility = np.std(shares) / np.mean(shares) if np.mean(shares) > 0 else 0

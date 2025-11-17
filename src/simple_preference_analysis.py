@@ -6,12 +6,16 @@ sklearn을 활용한 간단하고 효율적인 선호도 분석 및 시각화
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
-from scipy.stats import chi2_contingency
 from typing import Dict, List, Any, Optional
 import base64
 import io
 import logging
 import matplotlib
+
+try:
+    from scipy.stats import chi2_contingency
+except ImportError:
+    chi2_contingency = None
 
 def _get_mpl():
     # 헤드리스 서버 안전
@@ -154,16 +158,10 @@ class SimplePreferenceAnalyzer:
         """브랜드별 기간별 히트맵"""
         period_col = 'month' if period_type == 'month' else 'season'
         crosstab = pd.crosstab(df['brand'], df[period_col], normalize='columns')
-        crosstab_percent = crosstab * 100  # 백분율로 변환
-
+        
         plt, sns = _get_mpl()
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.heatmap(crosstab_percent, annot=True, fmt='.1f', cmap='YlGn', ax=ax,
-                   annot_kws={'size': 10}, cbar_kws={'label': '비율 (%)'})
-
-        # 히트맵 셀에 % 기호 추가
-        for text in ax.texts:
-            text.set_text(text.get_text() + '%')
+        sns.heatmap(crosstab, annot=True, fmt='.2f', cmap='YlGn', ax=ax)
         title = '브랜드별 월별 선호도' if period_type == 'month' else '브랜드별 계절별 선호도'
         ax.set_title(title, fontsize=14, fontweight='medium')
         if period_type == 'month':
@@ -178,22 +176,25 @@ class SimplePreferenceAnalyzer:
     def _create_pie_chart(self, df: pd.DataFrame) -> str:
         """브랜드별 시장 점유율 파이차트"""
         brand_counts = df['brand'].value_counts()
-        total_count = brand_counts.sum()
+        total_count = float(brand_counts.sum())
 
         # 3% 미만 브랜드들을 '기타'로 합치기
         threshold = 0.05 * total_count
-        major_brands = brand_counts[brand_counts >= threshold]
-        minor_brands = brand_counts[brand_counts < threshold]
+        major_mask = brand_counts.ge(threshold)
+        minor_mask = brand_counts.lt(threshold)
+        major_brands = brand_counts[major_mask]
+        minor_brands = brand_counts[minor_mask]
 
         if len(minor_brands) > 0:
-            major_brands['기타'] = minor_brands.sum()
+            major_brands = major_brands.copy()
+            major_brands['기타'] = int(minor_brands.sum())
 
         plt, _ = _get_mpl()
         fig, ax = plt.subplots(figsize=(8, 8))
         colors = [self._color_for_brand(b) if b != '기타' else '#CCCCCC' for b in major_brands.index]
         ax.pie(major_brands.values, labels=major_brands.index, autopct='%1.1f%%',
                colors=colors, startangle=90)
-        ax.set_title('브랜드별 시장 점유율', fontsize=14, fontweight='medium')
+        ax.set_title('브랜드별 시장 점유율')
 
         plt.tight_layout()
         return self._fig_to_base64(fig)
@@ -217,7 +218,7 @@ class SimplePreferenceAnalyzer:
                    marker='o', label=brand, linewidth=2,
                    color=self._color_for_brand(brand))
         
-        ax.set_title(f'브랜드별 {period_type} 트렌드', fontsize=14, fontweight='medium')
+        ax.set_title(f'브랜드별 {period_type} 트렌드')
         ax.set_xlabel('기간')
         ax.set_ylabel('운행 건수')
         ax.legend()
@@ -258,7 +259,7 @@ class SimplePreferenceAnalyzer:
             ax.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 0.01,
                    f'{score:.2f}', ha='center', va='bottom')
         
-        ax.set_title('브랜드별 계절성 강도', fontsize=14, fontweight='medium')
+        ax.set_title('브랜드별 계절성 강도')
         ax.set_ylabel('계절성 강도 (변동계수)')
         
         plt.tight_layout()
@@ -276,7 +277,13 @@ class SimplePreferenceAnalyzer:
             ax.axis('off')
             return self._fig_to_base64(fig)
 
-        from scipy.stats import chi2_contingency
+        if chi2_contingency is None:
+            plt, _ = _get_mpl()
+            fig, ax = plt.subplots(figsize=(6, 3))
+            ax.text(0.5, 0.5, 'scipy 패키지가 설치되지 않았습니다.', ha='center', va='center')
+            ax.axis('off')
+            return self._fig_to_base64(fig)
+            
         chi2, p_value, dof, expected = chi2_contingency(crosstab)
 
         plt, sns = _get_mpl()
