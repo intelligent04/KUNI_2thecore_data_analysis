@@ -153,7 +153,7 @@ class BaseAnalysisAPI(Resource):
             app.logger.error(f'Analysis error: {str(e)}')
             return {"success": False, "error": f"분석 중 오류가 발생했습니다: {str(e)}"}, 500
 
-    def get_param(self, param_name, default=None, param_type=str):
+    def get_param(self, param_name, default=None, param_type: type = str):
         """파라미터 추출 및 타입 변환 헬퍼"""
         try:
             value = request.args.get(param_name, default)

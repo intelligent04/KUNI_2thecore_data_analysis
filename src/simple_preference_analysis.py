@@ -5,9 +5,11 @@ sklearn을 활용한 간단하고 효율적인 선호도 분석 및 시각화
 
 import pandas as pd
 import numpy as np
+from .data_loader import get_data_from_db
 from sklearn.preprocessing import LabelEncoder
 from scipy.stats import chi2_contingency
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, cast
+from numpy.typing import NDArray
 import base64
 import io
 import logging
@@ -33,7 +35,7 @@ class SimplePreferenceAnalyzer:
         self.brand_colors = {'현대': '#1f77b4', '기아': '#ff7f0e', '제네시스': '#2ca02c'}
         self.dynamic_colors = {}
         # 기본 팔레트(필요 시 확장)
-        self.color_palette = ['#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2',
+        self.color_palette = ["#323b6e", '#d62728', '#9467bd', '#8c564b', '#e377c2',
                               '#7f7f7f', '#bcbd22', '#17becf', '#1f77b4', '#ff7f0e']
         self.palette_idx = 0
         self.season_names = {1: '봄', 2: '여름', 3: '가을', 4: '겨울'}
@@ -88,7 +90,7 @@ class SimplePreferenceAnalyzer:
     
     def _load_data(self, year: Optional[str]) -> pd.DataFrame:
         """데이터 로드 및 전처리"""
-        from .data_loader import get_data_from_db
+
         
         query = """
         SELECT dl.start_time, dl.brand, dl.model, c.car_type
@@ -157,8 +159,10 @@ class SimplePreferenceAnalyzer:
         
         plt, sns = _get_mpl()
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.heatmap(crosstab, annot=True, fmt='.2f', cmap='YlOrRd', ax=ax)
-        ax.set_title(f'브랜드별 {period_type} 선호도')
+        sns.heatmap(crosstab, annot=True, fmt='.2f', cmap='YlGn', ax=ax)
+        title = '브랜드별 월별 선호도' if period_type == 'month' else '브랜드별 계절별 선호도'
+        ax.set_title(title)
+        ax.set_ylabel('브랜드')
         
         plt.tight_layout()
         return self._fig_to_base64(fig)
@@ -256,8 +260,12 @@ class SimplePreferenceAnalyzer:
             ax.axis('off')
             return self._fig_to_base64(fig)
 
-        from scipy.stats import chi2_contingency
-        chi2, p_value, dof, expected = chi2_contingency(crosstab)
+        # Chi-square test (명시적으로 ndarray로 변환해 타입 안정성 확보)
+        chi2_res = chi2_contingency(crosstab.to_numpy())
+        chi2, p_value, dof, expected_arr = cast(
+            tuple[float, float, int, NDArray[np.float64]],
+            chi2_res,
+        )
 
         plt, sns = _get_mpl()
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
@@ -265,7 +273,10 @@ class SimplePreferenceAnalyzer:
         sns.heatmap(crosstab, annot=True, fmt='d', cmap='Blues', ax=ax1)
         ax1.set_title(f'관측값 (χ² = {chi2:.2f})')
 
-        expected_df = pd.DataFrame(expected, index=crosstab.index, columns=crosstab.columns)
+        # Pylance가 tuple로 추론하는 경우가 있어 명시적 타입으로 생성
+        expected_df = pd.DataFrame(
+            data=expected_arr, index=crosstab.index, columns=crosstab.columns
+        )
         sns.heatmap(expected_df, annot=True, fmt='.1f', cmap='Reds', ax=ax2)
         ax2.set_title(f'기댓값 (p = {p_value:.4f})')
 
