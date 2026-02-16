@@ -2,61 +2,11 @@
 
 > KUNI 2thecore 데이터 분석 시스템의 전체 아키텍처 및 컴포넌트 구조
 
-## 아키텍처 개요
+## 아키텍처 다이어그램
 
-```mermaid
-graph TB
-    subgraph "프레젠테이션 레이어"
-        A[REST API 클라이언트]
-        B[Swagger UI<br/>/apidocs/]
-    end
+![System Architecture](architecture-diagram.png)
 
-    subgraph "API 레이어"
-        C[Flask Application<br/>app.py:16]
-        D[Flask-RESTful API<br/>app.py:34]
-        E[Swagger/Flasgger<br/>app.py:23]
-    end
-
-    subgraph "비즈니스 로직 레이어"
-        F[BaseAnalysisAPI<br/>app.py:136]
-        G[PreferenceAnalysisAPI<br/>app.py:170]
-        H[TrendAnalysisAPI<br/>app.py:186]
-        I[DailyForecastAPI<br/>app.py:203]
-        J[RegionClusteringAPI<br/>app.py:220]
-    end
-
-    subgraph "서비스 레이어"
-        K[SimplePreferenceAnalyzer<br/>simple_preference_analysis.py:31]
-        L[SimpleTrendAnalyzer<br/>simple_trend_analysis.py:27]
-        M[DailyForecastAnalyzer<br/>daily_forecast.py:33]
-        N[RegionClusteringAnalyzer<br/>region_clustering.py:25]
-    end
-
-    subgraph "데이터 레이어"
-        O[DataLoader<br/>data_loader.py:6]
-        P[CacheManager<br/>cache.py:7]
-    end
-
-    subgraph "인프라"
-        Q[(MySQL Database)]
-        R[File System<br/>/cache]
-    end
-
-    A --> C
-    B --> C
-    C --> D
-    D --> E
-    D --> F
-    F --> G & H & I & J
-    G --> K
-    H --> L
-    I --> M
-    J --> N
-    K & L & M & N --> O
-    K & L & M & N --> P
-    O --> Q
-    P --> R
-```
+> [Figma에서 편집하기](https://www.figma.com/board/34lclO6XsFRReY3jTPS3jW/KUNI-2thecore-Data-Analysis-Architecture)
 
 ## 레이어별 상세 설명
 
@@ -215,114 +165,7 @@ def cache_result(duration: int = 3600):
 
 ## 컴포넌트 의존성
 
-```mermaid
-graph LR
-    subgraph "External"
-        Flask
-        SQLAlchemy
-        sklearn
-        statsmodels
-        matplotlib
-    end
-
-    subgraph "Application"
-        A[app.py]
-        B[simple_preference_analysis.py]
-        C[simple_trend_analysis.py]
-        D[daily_forecast.py]
-        E[region_clustering.py]
-        F[data_loader.py]
-        G[cache.py]
-        H[font_config.py]
-    end
-
-    A --> Flask
-    A --> B & C & D & E
-    B & C & D & E --> F
-    B & C & D & E --> G
-    B & C --> sklearn
-    D --> statsmodels
-    E --> sklearn
-    B & C & D & E --> matplotlib
-    B & C & D & E --> H
-    F --> SQLAlchemy
-```
-
-## 클래스 다이어그램
-
-```mermaid
-classDiagram
-    class Resource {
-        <<Flask-RESTful>>
-    }
-
-    class BaseAnalysisAPI {
-        +execute_analysis(analyzer_class, module, method, kwargs)
-        +get_param(name, default, type)
-    }
-
-    class PreferenceAnalysisAPI {
-        +get() Dict
-    }
-
-    class TrendAnalysisAPI {
-        +get() Dict
-    }
-
-    class DailyForecastAPI {
-        +get() Dict
-    }
-
-    class RegionClusteringAPI {
-        +get() Dict
-    }
-
-    class SimplePreferenceAnalyzer {
-        -brand_colors: Dict
-        -season_names: Dict
-        +analyze_preferences(year, period_type) Dict
-        -_load_data(year) DataFrame
-        -_create_all_charts(df, period_type) Dict
-        -_create_heatmap(df, period_type) str
-        -_create_pie_chart(df) str
-        -_fig_to_base64(fig) str
-    }
-
-    class SimpleTrendAnalyzer {
-        -brand_colors: Dict
-        +analyze_yearly_trend(start_year, end_year, top_n) Dict
-        -_load_trend_data(start, end) DataFrame
-        -_analyze_brand_trends(df) Dict
-        -_analyze_model_trends(df, n) Dict
-    }
-
-    class DailyForecastAnalyzer {
-        -max_forecast_days: int
-        +analyze(start, end, forecast_days) Dict
-        -_load_data(start, end) DataFrame
-        -_forecast_sarima(stats, days) Tuple
-        -_preprocess_timeseries(series) Tuple
-    }
-
-    class RegionClusteringAnalyzer {
-        -default_k: int
-        +analyze(start, end, k, use_end, method) Dict
-        -_load_data(start, end, use_end) DataFrame
-        -_summarize_clusters(df, centers, min) Tuple
-        -_haversine_km(lat1, lon1, lat2, lon2) float
-    }
-
-    Resource <|-- BaseAnalysisAPI
-    BaseAnalysisAPI <|-- PreferenceAnalysisAPI
-    BaseAnalysisAPI <|-- TrendAnalysisAPI
-    BaseAnalysisAPI <|-- DailyForecastAPI
-    BaseAnalysisAPI <|-- RegionClusteringAPI
-
-    PreferenceAnalysisAPI ..> SimplePreferenceAnalyzer : uses
-    TrendAnalysisAPI ..> SimpleTrendAnalyzer : uses
-    DailyForecastAPI ..> DailyForecastAnalyzer : uses
-    RegionClusteringAPI ..> RegionClusteringAnalyzer : uses
-```
+컴포넌트 간 의존성과 클래스 구조는 위 아키텍처 다이어그램에 포함되어 있습니다. 상세 클래스 다이어그램은 [[Diagrams]] 페이지를 참조하세요.
 
 ## 설계 원칙
 
@@ -358,25 +201,6 @@ fig.savefig(buffer, format='jpeg', dpi=75, bbox_inches='tight')
 ## 확장성 고려사항
 
 ### 수평 확장
-```mermaid
-graph LR
-    LB[Load Balancer]
-
-    subgraph "Flask 인스턴스"
-        S1[Server 1]
-        S2[Server 2]
-        S3[Server N]
-    end
-
-    subgraph "공유 리소스"
-        DB[(MySQL)]
-        CACHE[(Redis/Shared Cache)]
-    end
-
-    LB --> S1 & S2 & S3
-    S1 & S2 & S3 --> DB
-    S1 & S2 & S3 --> CACHE
-```
 
 ### 캐시 외부화 권장
 현재 파일 기반 캐시는 단일 서버에서만 동작합니다. 다중 서버 환경에서는 Redis와 같은 분산 캐시 사용을 권장합니다.

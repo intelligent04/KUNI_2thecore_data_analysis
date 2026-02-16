@@ -1,113 +1,14 @@
 # 다이어그램 모음
 
-> KUNI 2thecore 데이터 분석 시스템의 Mermaid 다이어그램 컬렉션
+> KUNI 2thecore 데이터 분석 시스템의 다이어그램 컬렉션
 
 ## 시스템 아키텍처
 
 ### 전체 시스템 구조
 
-```mermaid
-graph TB
-    subgraph "클라이언트 레이어"
-        WEB[웹 브라우저]
-        API_CLIENT[API 클라이언트<br/>curl, Postman]
-        SWAGGER[Swagger UI<br/>/apidocs/]
-    end
+![System Architecture](architecture-diagram.png)
 
-    subgraph "애플리케이션 레이어"
-        subgraph "Flask 서버"
-            FLASK[Flask App<br/>app.py:16]
-            CORS[CORS 미들웨어]
-            RESTFUL[Flask-RESTful<br/>app.py:34]
-        end
-
-        subgraph "API 리소스"
-            DATA_API[DataAnalysisAPI<br/>GET /]
-            QUERY_API[DataQueryAPI<br/>POST /api/data]
-            HEALTH_API[HealthCheckAPI<br/>GET /api/health]
-            PREF_API[PreferenceAnalysisAPI<br/>GET /api/analysis/period]
-            TREND_API[TrendAnalysisAPI<br/>GET /api/analysis/trend]
-            FORECAST_API[DailyForecastAPI<br/>GET /api/forecast/daily]
-            CLUSTER_API[RegionClusteringAPI<br/>GET /api/clustering/regions]
-        end
-    end
-
-    subgraph "서비스 레이어"
-        PREF_SVC[SimplePreferenceAnalyzer]
-        TREND_SVC[SimpleTrendAnalyzer]
-        FORECAST_SVC[DailyForecastAnalyzer]
-        CLUSTER_SVC[RegionClusteringAnalyzer]
-    end
-
-    subgraph "데이터 레이어"
-        LOADER[DataLoader<br/>data_loader.py]
-        CACHE[CacheManager<br/>cache.py]
-    end
-
-    subgraph "외부 시스템"
-        MYSQL[(MySQL Database)]
-        FS[File System<br/>/cache]
-    end
-
-    WEB & API_CLIENT & SWAGGER --> FLASK
-    FLASK --> CORS --> RESTFUL
-    RESTFUL --> DATA_API & QUERY_API & HEALTH_API
-    RESTFUL --> PREF_API & TREND_API & FORECAST_API & CLUSTER_API
-
-    PREF_API --> PREF_SVC
-    TREND_API --> TREND_SVC
-    FORECAST_API --> FORECAST_SVC
-    CLUSTER_API --> CLUSTER_SVC
-
-    PREF_SVC & TREND_SVC & FORECAST_SVC & CLUSTER_SVC --> LOADER
-    PREF_SVC & TREND_SVC & FORECAST_SVC & CLUSTER_SVC --> CACHE
-
-    LOADER --> MYSQL
-    CACHE --> FS
-```
-
-### 컴포넌트 관계도
-
-```mermaid
-graph LR
-    subgraph "진입점"
-        A[app.py]
-        B[run_server.py]
-    end
-
-    subgraph "분석 모듈"
-        C[simple_preference_analysis.py]
-        D[simple_trend_analysis.py]
-        E[daily_forecast.py]
-        F[region_clustering.py]
-    end
-
-    subgraph "유틸리티"
-        G[data_loader.py]
-        H[cache.py]
-        I[font_config.py]
-    end
-
-    subgraph "외부 라이브러리"
-        J[Flask/Flask-RESTful]
-        K[pandas/numpy]
-        L[sklearn]
-        M[statsmodels]
-        N[matplotlib/seaborn]
-        O[SQLAlchemy]
-    end
-
-    B --> A
-    A --> J
-    A --> C & D & E & F
-
-    C --> G & H & I & K & L & N
-    D --> G & H & I & K & L & N
-    E --> G & H & I & K & M & N
-    F --> G & H & I & K & L & N
-
-    G --> O & K
-```
+> [Figma에서 편집하기](https://www.figma.com/board/34lclO6XsFRReY3jTPS3jW/KUNI-2thecore-Data-Analysis-Architecture)
 
 ---
 

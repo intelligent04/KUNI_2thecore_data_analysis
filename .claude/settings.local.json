@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__figma__get_screenshot",
+      "Bash(python:*)",
+      "mcp__figma__whoami"
+    ]
+  }
+}
